@@ -3,8 +3,13 @@
  */
 package twitter;
 
+import java.time.Instant;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Extract consists of methods that extract information from a list of tweets.
@@ -15,6 +20,9 @@ import java.util.Set;
  */
 public class Extract {
 
+    private static final Pattern MENTION =
+            Pattern.compile("(?<![A-Za-z0-9_-])@([A-Za-z0-9_-]+)(?![A-Za-z0-9_-])");
+
     /**
      * Get the time period spanned by tweets.
      * 
@@ -24,7 +32,18 @@ public class Extract {
      *         every tweet in the list.
      */
     public static Timespan getTimespan(List<Tweet> tweets) {
-        throw new RuntimeException("not implemented");
+        Instant start = tweets.get(0).getTimestamp();
+        Instant end = start;
+        for (Tweet tweet : tweets) {
+            Instant timestamp = tweet.getTimestamp();
+            if (timestamp.isBefore(start)) {
+                start = timestamp;
+            }
+            if (timestamp.isAfter(end)) {
+                end = timestamp;
+            }
+        }
+        return new Timespan(start, end);
     }
 
     /**
@@ -43,7 +62,14 @@ public class Extract {
      *         include a username at most once.
      */
     public static Set<String> getMentionedUsers(List<Tweet> tweets) {
-        throw new RuntimeException("not implemented");
+        Set<String> mentionedUsers = new HashSet<>();
+        for (Tweet tweet : tweets) {
+            Matcher matcher = MENTION.matcher(tweet.getText());
+            while (matcher.find()) {
+                mentionedUsers.add(matcher.group(1).toLowerCase(Locale.ROOT));
+            }
+        }
+        return mentionedUsers;
     }
 
 }

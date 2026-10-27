@@ -3,7 +3,12 @@
  */
 package twitter;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
@@ -41,7 +46,17 @@ public class SocialNetwork {
      *         either authors or @-mentions in the list of tweets.
      */
     public static Map<String, Set<String>> guessFollowsGraph(List<Tweet> tweets) {
-        throw new RuntimeException("not implemented");
+        Map<String, Set<String>> followsGraph = new HashMap<>();
+        for (Tweet tweet : tweets) {
+            String author = tweet.getAuthor().toLowerCase(Locale.ROOT);
+            Set<String> follows = followsGraph.computeIfAbsent(author, name -> new HashSet<>());
+            for (String mentioned : Extract.getMentionedUsers(Collections.singletonList(tweet))) {
+                if (!mentioned.equals(author)) {
+                    follows.add(mentioned);
+                }
+            }
+        }
+        return followsGraph;
     }
 
     /**
@@ -54,7 +69,18 @@ public class SocialNetwork {
      *         descending order of follower count.
      */
     public static List<String> influencers(Map<String, Set<String>> followsGraph) {
-        throw new RuntimeException("not implemented");
+        Map<String, Integer> followerCounts = new HashMap<>();
+        for (Map.Entry<String, Set<String>> entry : followsGraph.entrySet()) {
+            followerCounts.putIfAbsent(entry.getKey(), 0);
+            for (String followed : entry.getValue()) {
+                followerCounts.merge(followed, 1, Integer::sum);
+            }
+        }
+
+        List<String> influencers = new ArrayList<>(followerCounts.keySet());
+        influencers.sort((first, second) ->
+                Integer.compare(followerCounts.get(second), followerCounts.get(first)));
+        return influencers;
     }
 
 }
